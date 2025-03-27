@@ -1,8 +1,9 @@
-import OpenAI from 'openai';
-import { HNItem } from './hn';
+import OpenAI from "openai";
+import { HNItem } from "./hn";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL,
 });
 
 export async function translateText(text: string): Promise<string> {
@@ -12,25 +13,28 @@ export async function translateText(text: string): Promise<string> {
       messages: [
         {
           role: "system",
-          content: "你是一个专业的翻译器，需要将英文内容翻译成地道的中文。保持专业术语的准确性，同时确保翻译后的内容通俗易懂。"
+          content:
+            "你是一个专业的翻译器，需要将英文内容翻译成地道的中文。保持专业术语的准确性，同时确保翻译后的内容通俗易懂。",
         },
         {
           role: "user",
-          content: `请将以下内容翻译成中文：\n\n${text}`
-        }
+          content: `请将以下内容翻译成中文：\n\n${text}`,
+        },
       ],
       temperature: 0.3,
     });
 
     return response.choices[0]?.message?.content || text;
   } catch (error) {
-    console.error('Translation error:', error);
+    console.error("Translation error:", error);
     return text;
   }
 }
 
-export async function translateStory(story: HNItem): Promise<{ titleZh: string; textZh?: string }> {
-  const titleZh = await translateText(story.title || '');
+export async function translateStory(
+  story: HNItem
+): Promise<{ titleZh: string; textZh?: string }> {
+  const titleZh = await translateText(story.title || "");
   const textZh = story.text ? await translateText(story.text) : undefined;
 
   return {
@@ -39,8 +43,10 @@ export async function translateStory(story: HNItem): Promise<{ titleZh: string; 
   };
 }
 
-export async function translateComment(comment: HNItem): Promise<{ textZh: string }> {
-  const textZh = await translateText(comment.text || '');
+export async function translateComment(
+  comment: HNItem
+): Promise<{ textZh: string }> {
+  const textZh = await translateText(comment.text || "");
   return { textZh };
 }
 
@@ -51,17 +57,17 @@ export async function batchTranslate<T, R>(
   delayMs: number = 1000
 ): Promise<(R | null)[]> {
   const results: (R | null)[] = [];
-  
+
   for (const item of items) {
     try {
       const result = await translateFn(item);
       results.push(result);
-      await new Promise(resolve => setTimeout(resolve, delayMs));
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     } catch (error) {
-      console.error('Batch translation error:', error);
+      console.error("Batch translation error:", error);
       results.push(null);
     }
   }
 
   return results;
-} 
+}
